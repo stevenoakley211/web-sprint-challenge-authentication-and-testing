@@ -1,8 +1,10 @@
 const supertest = require('supertest')
 const server = require('./server')
-const db = require('../database/dbConfig')
+const db = require('../database/dbConfig');
+const { column } = require('../database/dbConfig');
 
 describe('server', () => {
+    
     describe("POST to /api/auth/register", () => {
         beforeEach( async () => {
         await db('users').truncate();
@@ -30,7 +32,7 @@ describe('server', () => {
       
             expect(res.body.username).toBe('steve');
         });
-    })
+    });
     describe("POST /api/auth/login", () => {
         it("should return 200 when passed correct data", () => {
             return supertest(server)
@@ -53,6 +55,16 @@ describe('server', () => {
     
       });
       describe("GET /api/users", () => {
+          let token;
+          beforeAll( () =>{
+             return supertest(server)
+            .post("/api/auth/login")
+            .send({ username: "steve", password: "pass" })
+            .then(res => {
+                console.log(res.statusCode)
+                token = res.body.token;
+            });
+          });
         it("should return status code 401 if no token", () => {
             return supertest(server)
                 .get("/api/jokes")
@@ -61,10 +73,15 @@ describe('server', () => {
                 });
         });
         it('should return status 200 if correct token', () => {
+            
             return supertest(server)
-                
-        })
+            .get("/api/jokes")
+            .set('Authorization', `Bearer ${token}`)
+                .then(res => {
+                    console.log()
+                  expect(res.status).toBe(200)  
+                });
+            
+        });
     });
-      
-    
-})  
+});
